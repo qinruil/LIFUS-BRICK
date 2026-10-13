@@ -1,0 +1,537 @@
+"""
+================================================================================
+BRICK Training Script
+================================================================================
+
+Description:
+    Trains a single shared BRICK model on all subjects and sessions
+    (pre and post sonication, VIM and ZI targets) simultaneously.
+        - One shared BRICK instance (shared K, per-subject-per-session C)
+        - Train on all 76 items (19 subjects x 2 targets x pre + post)
+        - Extract C_pre and C_post after training to compute Delta_C
+
+    Training protocol (Zhou et al. 2025):
+        - Optimizer:  AdamW, lr=1e-4, weight_decay=1e-3
+        - Scheduler:  ReduceLROnPlateau(mode='min', factor=0.5, patience=15, min_lr=1e-6) - changed
+        - Early stop: stops once val classification loss regresses more than
+          cls_regression_threshold (default 0.3) above the best val cls loss
+          seen so far (i.e. the value that produced best_model_cls.pt)
+        - Split:      7:1:2 by subject (no session leakage)
+
+    KL Annealing (training stabilization for N=19, not in original BRICK):
+        - KL_g0: linear ramp from 0 to 1 over KL_G0_ANNEAL_EPOCHS
+        - KL_u:  held at 0 for KL_U_DELAY_EPOCHS, then ramped over KL_U_ANNEAL_EPOCHS
+        - Free bits applied during training only (apply_free_bits=True)
+        - Validation uses true ELBO (apply_free_bits=False) for honest evaluation
+        (not used in final implementation)
+
+    Outputs saved to {base_results_dir}/{run_name}/ (base_results_dir defaults
+    to results/training/, but can be overridden e.g. by loso_study.py to
+    write to results/loso_19_fold/fold_{subject}/):
+        - best_model_recon.pt — checkpoint with lowest validation loss
+                                 (renamed from best_model.pt)
+        - best_model_cls.pt   — checkpoint with joint val+train classification
+                                 loss improvement (renamed from
+                                 best_model_cls_preoverfit.pt)
+        - final_model.pt      — checkpoint after last epoch / early stop
+        - loss_history.csv    — per-epoch logging of all loss components
+        - split.json          — subject IDs for each split
+
+    Split modes:
+        - Default: split_dataset(ds, seed=split_seed) does a random 7:1:2
+          subject-level split (no session leakage).
+        - Explicit: pass subject_split={"train": [...], "val": [...],
+          "test": [...]} (subject IDs) to bypass the seed-based split
+          entirely, e.g. for LOSO cross-validation. See loso_study.py.
+
+Usage:
+    python training/train.py
+    python training/train.py --epochs 100   # pilot run
+    python training/train.py --no-control   # ablation: no control module
+    python training/train.py --no-ic        # ablation: no IC module
+"""
+
+import sys
+import csv
+import json
+import logging
+import argparse
+from pathlib import Path
+from datetime import datetime
+import random
+import numpy as np
+import torch
+import torch.optim as optim
+from torch.utils.data import Subset
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+
+from models.brick import BRICK
+from training.dataset import BRICKDataset, split_dataset
+from config import (
+    M, N_ROIS, H, T as T_DATA,
+    KL_G0_ANNEAL_EPOCHS, KL_G0_DELAY_EPOCHS, KL_U_DELAY_EPOCHS, KL_U_ANNEAL_EPOCHS,
+)
+import config
+
+# ================================================================================
+# DEFAULTS
+# ================================================================================
+N_EPOCHS        = 3000
+LR              = 1e-4
+DATA_DIR        = ROOT_DIR / "data" / "preprocessed_data"
+RESULTS_DIR     = ROOT_DIR / "results" / "trained_models"
+
+CSV_COLUMNS = [
+    "epoch",
+    "kl_g0_weight", "kl_u_weight",
+    "train_loss_total", "train_loss_recon", "train_loss_kl_g0",
+    "train_loss_kl_u",  "train_loss_cls",
+    "val_loss_total",   "val_loss_recon",   "val_loss_kl_g0",
+    "val_loss_kl_u",    "val_loss_cls",
+    "lr",
+]
+
+
+# ================================================================================
+# LOGGING
+# ================================================================================
+def setup_logging(results_dir: Path, run_name: str) -> logging.Logger:
+    results_dir.mkdir(parents=True, exist_ok=True)
+    # run_name may contain "/" (e.g. "loso_19_fold/fold_sub-01") -- use a
+    # logger name that's unique per run and a flattened filename so it
+    # doesn't try to create subdirectories under a .log path.
+    log_filename = run_name.replace("/", "__")
+    log_path = results_dir / f"{Path(log_filename).name}.log"
+
+    logger = logging.getLogger(run_name)
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()
+
+    fh = logging.FileHandler(log_path)
+    sh = logging.StreamHandler(sys.stdout)
+    fmt = logging.Formatter("%(asctime)s | %(message)s")
+    fh.setFormatter(fmt); sh.setFormatter(fmt)
+    logger.addHandler(fh); logger.addHandler(sh)
+
+    return logger
+
+
+# ================================================================================
+# SUBJECT-LEVEL SPLIT (explicit, non-seed-based)
+# ================================================================================
+def split_dataset_by_subjects(ds, train_subjects, val_subjects, test_subjects):
+    """
+    Build train/val/test Subsets from explicit subject ID lists, rather than
+    the random seed-based split_dataset(). Used for LOSO-style studies where
+    the caller controls exactly which subjects land in which split.
+
+    Args:
+        ds:              BRICKDataset instance
+        train_subjects:  list of subject IDs for training
+        val_subjects:    list of subject IDs for validation
+        test_subjects:   list of subject IDs for testing
+
+    Returns:
+        (train_ds, val_ds, test_ds): torch.utils.data.Subset objects, same
+        type returned by split_dataset(), so downstream code (run_epoch,
+        split.json logging via .indices) works unchanged.
+    """
+    train_set = set(train_subjects)
+    val_set   = set(val_subjects)
+    test_set  = set(test_subjects)
+
+    overlap = (train_set & val_set) | (train_set & test_set) | (val_set & test_set)
+    if overlap:
+        raise ValueError(f"subject_split has overlapping subjects across splits: {sorted(overlap)}")
+
+    train_idx, val_idx, test_idx = [], [], []
+    for i in range(len(ds)):
+        sid = ds[i]["subject_id"]
+        if sid in train_set:
+            train_idx.append(i)
+        elif sid in val_set:
+            val_idx.append(i)
+        elif sid in test_set:
+            test_idx.append(i)
+
+    return Subset(ds, train_idx), Subset(ds, val_idx), Subset(ds, test_idx)
+
+
+# ================================================================================
+# KL ANNEALING WEIGHTS
+# ================================================================================
+def get_kl_weights(epoch: int) -> tuple[float, float]:
+    """
+    Compute KL annealing weights for g0 and u at a given epoch.
+
+    KL_g0: linear ramp from 0 to 1 over KL_G0_ANNEAL_EPOCHS.
+           Set KL_G0_ANNEAL_EPOCHS=0 in config to disable (weight=1.0 always).
+
+    KL_u:  held at 0 for KL_U_DELAY_EPOCHS, then linear ramp over
+           KL_U_ANNEAL_EPOCHS. Gives reconstruction time to stabilize
+           before the control pathway is regularized.
+           Set KL_U_ANNEAL_EPOCHS=0 in config to disable (weight=1.0 always).
+
+    Args:
+        epoch (int): Current training epoch (1-indexed)
+
+    Returns:
+        kl_g0_weight (float): weight on KL_g0 term, in [0, 1]
+        kl_u_weight  (float): weight on KL_u term, in [0, 1]
+    """
+    kl_g0_weight = (
+        max(0.0, min(1.0, (epoch - KL_G0_DELAY_EPOCHS) / KL_G0_ANNEAL_EPOCHS))
+        if KL_G0_ANNEAL_EPOCHS > 0 else 1.0
+    )
+    kl_u_weight = (
+        max(0.0, min(1.0, (epoch - KL_U_DELAY_EPOCHS) / KL_U_ANNEAL_EPOCHS))
+        if KL_U_ANNEAL_EPOCHS > 0 else 1.0
+    )
+    return kl_g0_weight, kl_u_weight
+
+
+# ================================================================================
+# EPOCH
+# ================================================================================
+def run_epoch(
+    model:           BRICK,
+    subset,
+    train:           bool,
+    optimizer        = None,
+    kl_g0_weight:    float = 1.0,
+    kl_u_weight:     float = 1.0,
+    apply_free_bits: bool  = True,
+    batch_size:      int   = None,
+) -> dict:
+    """
+    Run one epoch over a dataset subset.
+
+    Args:
+        model            (BRICK):  The model
+        subset:                    torch.utils.data.Subset
+        train            (bool):   If True, update weights
+        optimizer:                 AdamW (None in eval mode)
+        kl_g0_weight     (float):  Annealing weight for KL_g0
+        kl_u_weight      (float):  Annealing weight for KL_u
+        apply_free_bits  (bool):   Apply free bits floor (True=train, False=val)
+
+    Returns:
+        dict of mean loss components over the epoch
+    """
+
+    _batch_size = batch_size if batch_size is not None else config.BATCH_SIZE
+
+    model.train(train)
+
+    totals = {
+        "loss_total": 0.0, "loss_recon": 0.0,
+        "loss_kl_g0": 0.0, "loss_kl_u":  0.0, "loss_cls": 0.0,
+    }
+    n = len(subset)
+
+    indices = list(subset.indices)
+    if train:
+        random.shuffle(indices)
+        optimizer.zero_grad()
+
+    for batch_start in range(0, n, _batch_size):
+        batch_indices = indices[batch_start : batch_start + _batch_size]
+
+        batch_losses = []
+        for i in batch_indices:
+            item = subset.dataset[i]
+            x = item["x"]
+            fc = item.get("fc")
+            label = item["lifus_condition"]
+
+            out = model(x, fc=fc, label=label, kl_g0_weight=kl_g0_weight, kl_u_weight=kl_u_weight, apply_free_bits=apply_free_bits)
+            batch_losses.append(out["losses"]["loss_total"] / len(batch_indices))
+
+            for key in totals:
+                totals[key] += out["losses"][key].item()
+
+        if train:
+            torch.stack(batch_losses).sum().backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+            optimizer.zero_grad()
+
+    return {k: v / n for k, v in totals.items()}
+
+
+# ================================================================================
+# MAIN TRAINING LOOP
+# ================================================================================
+def safe_save(obj: dict, path: Path) -> None:
+    """Save a checkpoint atomically to avoid file lock issues on Windows."""
+    tmp = path.with_suffix(".tmp")
+    if tmp.exists():
+        tmp.unlink()
+    torch.save(obj, tmp)
+    if path.exists():
+        path.unlink()
+    tmp.rename(path)
+
+def train(
+    n_epochs:     int   = N_EPOCHS,
+    use_control:  bool  = True,
+    use_ic:       bool  = True,
+    run_name:     str   = "train",
+    lambda_noise: float = None,
+    weight_decay: float = None,
+    batch_size:   int   = None,
+    beta:         float = None,
+    epsilon:      float = None,
+    train_seed:   int   = None,   # overrides SEED for model init/training stochasticity
+    split_seed:   int   = None,   # overrides SEED for train/val/test split (ignored if subject_split given)
+    subject_split: dict = None,   # {"train": [...], "val": [...], "test": [...]} of subject IDs;
+                                   # if provided, bypasses split_dataset()/split_seed entirely
+    base_results_dir: Path = None,  # overrides RESULTS_DIR (e.g. for results/loso_19_fold/)
+    cls_regression_threshold: float = 0.3,  # stop once val_loss_cls exceeds the best
+                                             # best_model_cls.pt value seen so far by
+                                             # more than this amount
+):
+    _lambda_noise = lambda_noise if lambda_noise is not None else config.LAMBDA_NOISE
+    _weight_decay = weight_decay if weight_decay is not None else config.WEIGHT_DECAY
+    _batch_size   = batch_size   if batch_size   is not None else config.BATCH_SIZE
+    _beta         = beta         if beta         is not None else config.BETA
+    _epsilon      = epsilon      if epsilon      is not None else config.EPSILON
+    _train_seed   = train_seed   if train_seed   is not None else config.SEED
+    _split_seed   = split_seed   if split_seed   is not None else config.SEED
+    _base_results_dir = base_results_dir if base_results_dir is not None else RESULTS_DIR
+
+    random.seed(_train_seed); np.random.seed(_train_seed); torch.manual_seed(_train_seed)
+    results_dir = _base_results_dir / run_name
+    log = setup_logging(results_dir, run_name)
+
+    log.info("=" * 60)
+    log.info(f"BRICK Training -- {run_name}")
+    log.info(f"N_ROIS={N_ROIS}, M={M}, H={H}, T={T_DATA}")
+    log.info(f"Epochs={n_epochs}, LR={LR}, WD={_weight_decay}, "
+             f"LAMBDA_NOISE={_lambda_noise}, BATCH_SIZE={_batch_size}, "
+             f"BETA={_beta}, EPSILON={_epsilon}")
+    log.info(f"cls_regression_threshold={cls_regression_threshold}, use_control={use_control}, use_ic={use_ic}")
+    log.info(f"KL annealing: g0 over {KL_G0_ANNEAL_EPOCHS} epochs, "
+             f"u delayed {KL_U_DELAY_EPOCHS} then over {KL_U_ANNEAL_EPOCHS} epochs")
+    if subject_split is not None:
+        log.info("Split mode: EXPLICIT subject_split (split_seed ignored)")
+    else:
+        log.info(f"Split mode: random split_dataset(seed={_split_seed})")
+    log.info("=" * 60)
+
+    # --- Data ---
+    log.info("Loading dataset...")
+    ds = BRICKDataset(DATA_DIR)
+
+    if subject_split is not None:
+        train_ds, val_ds, test_ds = split_dataset_by_subjects(
+            ds, subject_split["train"], subject_split["val"], subject_split["test"]
+        )
+    else:
+        train_ds, val_ds, test_ds = split_dataset(ds, seed=_split_seed)
+
+    log.info(
+        f"Split: {len(train_ds)} train | {len(val_ds)} val | "
+        f"{len(test_ds)} test items"
+    )
+
+    # Save split for reproducibility
+    split_info = {
+        "train": sorted(set(ds[i]["subject_id"] for i in train_ds.indices)),
+        "val":   sorted(set(ds[i]["subject_id"] for i in val_ds.indices)),
+        "test":  sorted(set(ds[i]["subject_id"] for i in test_ds.indices)),
+        "split_mode": "explicit_subject_split" if subject_split is not None else "seed_random",
+        "seed":  None if subject_split is not None else _split_seed,
+    }
+    with open(results_dir / "split.json", "w") as f:
+        json.dump(split_info, f, indent=2)
+
+    # --- Model ---
+    model = BRICK(use_control=use_control, use_ic=use_ic,
+              lambda_noise=_lambda_noise, beta=_beta, epsilon=_epsilon)
+    n_params = sum(p.numel() for p in model.parameters())
+    log.info(f"Model parameters: {n_params:,}")
+
+    # --- Optimizer and scheduler ---
+    optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=_weight_decay)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=15, min_lr=1e-6
+    )
+
+    # --- CSV ---
+    csv_path = results_dir / "loss_history.csv"
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+        writer.writeheader()
+
+    # --- Training loop ---
+    best_val_loss               = float("inf")   # best_model_recon.pt: val-only
+    best_val_loss_cls_preoverfit   = float("inf")   # best_model_cls.pt: joint val+train (cls)
+    best_train_loss_cls_preoverfit = float("inf")
+    log.info("Starting training...")
+
+    for epoch in range(1, n_epochs + 1):
+
+        # KL annealing weights for this epoch
+        kl_g0_weight, kl_u_weight = get_kl_weights(epoch)
+
+        # Train — use free bits to prevent collapse
+        train_losses = run_epoch(
+            model, train_ds, train=True, optimizer=optimizer,
+            kl_g0_weight=kl_g0_weight, kl_u_weight=kl_u_weight,
+            apply_free_bits=True, batch_size=_batch_size,
+        )
+
+        # Validate — true ELBO, no free bits, full KL weights
+        with torch.no_grad():
+            val_losses = run_epoch(
+                model, val_ds, train=False, optimizer=None,
+                kl_g0_weight=1.0, kl_u_weight=1.0,
+                apply_free_bits=False, batch_size=_batch_size,
+            )
+
+        scheduler.step(val_losses["loss_total"])
+        current_lr = optimizer.param_groups[0]['lr']
+
+        # --- Pre-overfit criterion for classification loss specifically ---
+        val_cls_improved_joint   = val_losses["loss_cls"]   < best_val_loss_cls_preoverfit
+        train_cls_improved_joint = train_losses["loss_cls"] < best_train_loss_cls_preoverfit
+
+        # --- Log to CSV ---
+        row = {
+            "epoch":        epoch,
+            "kl_g0_weight": f"{kl_g0_weight:.3f}",
+            "kl_u_weight":  f"{kl_u_weight:.3f}",
+            "lr":           f"{current_lr:.2e}",
+        }
+        for k, v in train_losses.items():
+            row[f"train_{k}"] = f"{v:.6f}"
+        for k, v in val_losses.items():
+            row[f"val_{k}"] = f"{v:.6f}"
+
+        with open(csv_path, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+            writer.writerow(row)
+
+        # --- Log to terminal every 10 epochs ---
+        if epoch % 10 == 0 or epoch == 1:
+            log.info(
+                f"Epoch {epoch:4d}/{n_epochs} | "
+                f"kl_g0_w={kl_g0_weight:.2f} kl_u_w={kl_u_weight:.2f} | "
+                f"train={train_losses['loss_total']:.4f} "
+                f"(recon={train_losses['loss_recon']:.4f}, "
+                f"kl_g0={train_losses['loss_kl_g0']:.4f}, "
+                f"kl_u={train_losses['loss_kl_u']:.4f}, "
+                f"cls={train_losses['loss_cls']:.4f}) | "
+                f"val={val_losses['loss_total']:.4f} | "
+                f"lr={current_lr:.2e}"
+                + (" [PREOVERFIT-UPDATE]" if (val_cls_improved_joint and train_cls_improved_joint) else "")
+            )
+
+        # --- Save best checkpoint (by total val loss only — original behavior) ---
+        val_total = val_losses["loss_total"]
+        if val_total < best_val_loss:
+            best_val_loss = val_total
+            safe_save({
+                "epoch":                epoch,
+                "model_state_dict":     model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_loss_total":       val_losses["loss_total"],
+                "train_loss_total":     train_losses["loss_total"],
+                "use_control":          use_control,
+                "use_ic":               use_ic,
+                "h":                    model.h,
+                "m":                    model.m,
+            }, results_dir / "best_model_recon.pt")
+            log.info(f"  -> New best val loss: {val_total:.4f} (saved best_model_recon.pt)")
+
+        # --- Save best pre-overfit checkpoint (val AND train classification loss both improve) ---
+        if val_cls_improved_joint and train_cls_improved_joint:
+            best_val_loss_cls_preoverfit   = val_losses["loss_cls"]
+            best_train_loss_cls_preoverfit = train_losses["loss_cls"]
+            safe_save({
+                "epoch":                epoch,
+                "model_state_dict":     model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_loss_cls":         val_losses["loss_cls"],
+                "train_loss_cls":       train_losses["loss_cls"],
+                "val_loss_total":       val_losses["loss_total"],
+                "train_loss_total":     train_losses["loss_total"],
+                "use_control":          use_control,
+                "use_ic":               use_ic,
+                "h":                    model.h,
+                "m":                    model.m,
+            }, results_dir / "best_model_cls.pt")
+            log.info(f"  -> New joint-best cls loss: "
+                     f"val={best_val_loss_cls_preoverfit:.4f}, train={best_train_loss_cls_preoverfit:.4f}")
+
+        # --- Early stopping (cls regression threshold) ---
+        # Stop as soon as val cls loss regresses more than cls_regression_threshold
+        # above the best best_model_cls.pt value seen so far. On the epoch that
+        # sets a new best, val_losses["loss_cls"] == best_val_loss_cls_preoverfit,
+        # so this never fires on an improving epoch.
+        if val_losses["loss_cls"] > best_val_loss_cls_preoverfit + cls_regression_threshold:
+            log.info(
+                f"Stopping at epoch {epoch} -- val cls loss {val_losses['loss_cls']:.4f} "
+                f"exceeds best {best_val_loss_cls_preoverfit:.4f} by more than "
+                f"{cls_regression_threshold} (cls_regression_threshold)."
+            )
+            break
+
+    # --- Save final checkpoint ---
+    safe_save({
+        "epoch":                epoch,
+        "model_state_dict":     model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "val_loss_total":       val_losses["loss_total"],
+        "train_loss_total":     train_losses["loss_total"],
+        "use_control":          use_control,
+        "use_ic":               use_ic,
+        "h":                    model.h,
+        "m":                    model.m,
+    }, results_dir / "final_model.pt")
+
+    log.info(f"Final model saved to {results_dir / 'final_model.pt'}")
+    log.info(f"Best val loss: {best_val_loss:.4f}")
+    log.info(f"Best joint-best cls loss: val={best_val_loss_cls_preoverfit:.4f}, train={best_train_loss_cls_preoverfit:.4f}")
+    log.info("Training complete.")
+
+    return best_val_loss
+
+
+# ================================================================================
+# ENTRY POINT
+# ================================================================================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train BRICK model")
+    parser.add_argument("--epochs",     type=int,  default=N_EPOCHS)
+    parser.add_argument("--no-control", action="store_true",
+                        help="Ablation: disable control module")
+    parser.add_argument("--no-ic",      action="store_true",
+                        help="Ablation: disable initial condition module")
+    parser.add_argument("--run-name",   type=str,  default=None,
+                        help="Name for results subdirectory")
+    args = parser.parse_args()
+
+    use_control = not args.no_control
+    use_ic      = not args.no_ic
+
+    if args.run_name:
+        run_name = args.run_name
+    elif not use_control and not use_ic:
+        run_name = "ablation_no_control_no_ic"
+    elif not use_control:
+        run_name = "ablation_no_control"
+    elif not use_ic:
+        run_name = "ablation_no_ic"
+    else:
+        run_name = f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    train(
+        n_epochs=args.epochs,
+        use_control=use_control,
+        use_ic=use_ic,
+        run_name=run_name,
+    )

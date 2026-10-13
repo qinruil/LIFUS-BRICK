@@ -1,0 +1,5 @@
+﻿network,n_roi,observed_n_modes,observed_share_of_modes,null_share_of_modes,excess
+BasalGanglia,10,83,0.864583,0.864583,0
+Cerebellum,4,0,0,0,0
+Cortex,8,13,0.135417,0.135417,0
+TUS,2,0,0,0,0

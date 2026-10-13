@@ -1,0 +1,33 @@
+{
+  "script": "analysis/variance_decomposition_extended.py",
+  "tr_s": 2.0,
+  "nyquist_hz": 0.25,
+  "bands_hz": {
+    "delta": [
+      0.01,
+      0.04
+    ],
+    "theta": [
+      0.04,
+      0.08
+    ],
+    "alpha": [
+      0.08,
+      0.12
+    ],
+    "beta_fast": [
+      0.12,
+      0.25
+    ]
+  },
+  "theta_values": [
+    0.0,
+    0.5,
+    1.0
+  ],
+  "reference_checkpoint": "results\\final_model\\best_model_cls.pt",
+  "task_states_dir": "results\\trained_models\\task_states",
+  "loso_dir": "results\\trained_models\\loso_19_fold_beta_0.2_13to1to5_split",
+  "seed_dir": "results\\trained_models\\sweep_3_seeds",
+  "elapsed_sec": 33.14
+}

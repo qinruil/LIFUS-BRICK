@@ -1,0 +1,14 @@
+{
+  "script": "analysis/mode_participation.py",
+  "reference_checkpoint": "results\\final_model\\best_model_cls.pt",
+  "tr_s": 2.0,
+  "networks": {
+    "BasalGanglia": 10,
+    "Cerebellum": 4,
+    "Cortex": 8,
+    "TUS": 2
+  },
+  "note_sign": "topography uses |W_bar_x| columns; complex phase of the readout is not used",
+  "note_matching": "Hungarian assignment on loading-space cosine is a descriptive correspondence estimate, not a test",
+  "elapsed_sec": 1.65
+}

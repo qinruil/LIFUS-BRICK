@@ -1,0 +1,8 @@
+layer,target,feature,unit,id,n_subjects,mean_rho_vim,mean_rho_zi,diff,ci_lo,ci_hi,p_wilcoxon,p_boot,inference_note
+target_dissociation,zi_minus_vim,dk_self,subject,AGGREGATE,19,0.0275973,-0.0433867,-0.070984,-0.184397,0.0426144,0.225323,0.2348,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_in_signed,subject,AGGREGATE,19,0.0186728,-0.060595,-0.0792677,-0.226142,0.0683307,0.373596,0.2864,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_out_signed,subject,AGGREGATE,19,0.0273684,-0.00723112,-0.0345995,-0.136632,0.0665481,0.622562,0.538,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_in_abs,subject,AGGREGATE,19,-0.0237986,-0.0453547,-0.0215561,-0.104668,0.0674142,0.456495,0.5984,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_out_abs,subject,AGGREGATE,19,0.0302517,0.00832952,-0.0219222,-0.0975767,0.0665984,0.386877,0.6012,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_in_rel,subject,AGGREGATE,19,0.028833,-0.0502517,-0.0790847,-0.226043,0.0699336,0.293499,0.3,same shared delta-K vector used for both targets; a difference here reflects only delta-C side
+target_dissociation,zi_minus_vim,dk_out_rel,subject,AGGREGATE,19,0.0424256,-0.00636156,-0.0487872,-0.150896,0.0469577,0.441334,0.3228,same shared delta-K vector used for both targets; a difference here reflects only delta-C side

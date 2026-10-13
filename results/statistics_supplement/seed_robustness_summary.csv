@@ -1,0 +1,7 @@
+﻿seed_type,seed_value,n_roi_target_cells,agree_with_reference,agreement_rate,n_significant_fdr
+SPLIT_SEED,123,48,23,0.4792,4
+SPLIT_SEED,2024,48,20,0.4167,1
+SPLIT_SEED,42,48,23,0.4792,1
+TRAIN_SEED,123,48,31,0.6458,4
+TRAIN_SEED,2024,48,29,0.6042,0
+TRAIN_SEED,42,48,23,0.4792,1

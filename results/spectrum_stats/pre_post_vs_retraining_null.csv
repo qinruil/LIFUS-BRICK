@@ -1,0 +1,5 @@
+﻿observed,null_n,null_median,null_p90,null_p95,null_max,percentile,p_empirical_one_sided,z_vs_null,pair,kind,interpretation
+0.05679341930405656,171,0.0155512355078311,0.06648769493965376,0.06881059121604291,0.0876615699548794,84.21052631578947,0.16279069767441862,1.348897348753018,pre_model | post_model,mag,"descriptive: n=1 model per condition; percentile is against retraining spread, NOT a significance test"
+0.1824167491522714,171,0.019249589598785168,0.03790091774365227,0.03880870915370771,0.04090324593574273,100.0,0.005813953488372093,19.83856672393248,pre_model | post_model,phase,"descriptive: n=1 model per condition; percentile is against retraining spread, NOT a significance test"
+0.006490137995247257,171,0.0013610124232173789,0.002540703734339704,0.0026459680066162295,0.00276008910590515,100.0,0.005813953488372093,9.421880026978219,pre_model | post_model,freq,"descriptive: n=1 model per condition; percentile is against retraining spread, NOT a significance test"
+0.2916666666666667,,,,,,,0.0005265596135806317,,pre_model | post_model,KS_mag,descriptive only

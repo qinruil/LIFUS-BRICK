@@ -1,0 +1,2 @@
+﻿pair,n_modes,mean_matched_cos,mean_random_cos,lift_over_random,frac_matched_ge_0p5,frac_matched_ge_0p2,frac_random_ge_0p5,mean_abs_d_freq_matched_hz,median_dlog_mag_matched
+pre_model->post_model,96,0.48046,0.0049934,0.475466,0.4375,1,0.00878906,0.0737509,-0.0818334

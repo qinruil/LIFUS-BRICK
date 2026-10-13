@@ -1,0 +1,17 @@
+﻿condition,network,participation_mass
+vim_post,BasalGanglia,0.413955
+vim_post,Cerebellum,0.164058
+vim_post,Cortex,0.34194
+vim_post,TUS,0.0800463
+vim_pre,BasalGanglia,0.412437
+vim_pre,Cerebellum,0.163623
+vim_pre,Cortex,0.345473
+vim_pre,TUS,0.0784661
+zi_post,BasalGanglia,0.410738
+zi_post,Cerebellum,0.162974
+zi_post,Cortex,0.348419
+zi_post,TUS,0.0778686
+zi_pre,BasalGanglia,0.412676
+zi_pre,Cerebellum,0.162854
+zi_pre,Cortex,0.345936
+zi_pre,TUS,0.0785343

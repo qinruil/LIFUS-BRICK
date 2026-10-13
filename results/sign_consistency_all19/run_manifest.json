@@ -1,0 +1,19 @@
+{
+  "script": "analysis/symbol_consistency_test.py",
+  "generated_utc": "2026-10-06T18:47:03Z",
+  "primary_input": "results\\figures\\loso\\loso_19_fold_beta_0.2_13to1to5_split\\loso_delta_summary.csv",
+  "criterion_reproduced_from": "analysis/loso_analyze.py (CONSISTENCY_FRACTION=15/19, threshold=ceil(frac*n), zeros counted in neither sign but included in n)",
+  "null_model": "direction ~ Bernoulli(1/2) i.i.d. across subjects within a group",
+  "notes": [
+    "binomial p conditional on non-zero delta is primary; zero-inclusive denominator reported as a check column.",
+    "within-group BH over 24 ROIs mirrors the t-test correction convention; pooled-over-4-groups BH is the conservative second reading.",
+    "groups overlap in subjects across target columns (VIM(1st tx) and ZI(2nd tx) share the VIM_first subjects), so the pooled family is not independent; treat its q as indicative."
+  ],
+  "runtime": {
+    "python": "3.11.9",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1"
+  },
+  "elapsed_sec": 0.32
+}

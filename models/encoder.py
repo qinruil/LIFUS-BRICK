@@ -1,0 +1,134 @@
+"""
+================================================================================
+Encoder Module
+================================================================================
+
+Description:
+    Implements the encoder component of BRICK (Section III-B): maps a
+    subject's BOLD timeseries (and its functional connectivity) to the
+    initial latent state g_0 fed into the Koopman recurrence
+
+        g_0 ~ q(g_0 | x) = N(mu, diag(exp(logvar)))
+
+    g_0 is per-ROI structured: it is built by  computing a per-region
+    embedding (row_mlp applied to the region's row of the FC matrix), then
+    passing all N regions through a shared, permutation-equivariant
+    Transformer head to get per-node mu/logvar, which are then flattened
+    row-major into a single length-M vector (M = N * H). This ROI-major
+    flatten (region i -> block [i*H:(i+1)*H]) is the layout that the
+    control-matrix/region interpretation elsewhere in the codebase (C,
+    decode matrices, etc.) assumes.
+
+    The module has three outputs:
+        1. g_0     — sampled initial latent state, shape (M,)
+                     (reparameterized sample in train mode, mu in eval mode)
+        2. mu      — posterior mean, shape (M,)
+        3. logvar  — posterior log-variance, shape (M,), clamped to
+                     [-6.0, 2.0] (sigma in [0.05, 2.7])
+
+    Architecture:
+        - row_mlp: FC row (N,) -> per-region embedding (H,), weights shared
+          across all N regions, so output row i tracks region i
+        - mu_head, logvar_head: separate TransformerEncoder stacks over the
+          N region-tokens (d_model=H) -- equivariant over regions; this is
+          the layer the paper's Phi-equivariance claim is about
+        - mu_proj, logvar_proj: per-region Linear(H, H) heads on top of the
+          transformer outputs
+        - logvar is squashed via tanh into [-6.0, 2.0] before being used
+        - row-major flatten: (N, H) -> (M,), N blocks of H
+
+References:
+    - Zhou et al. 2025 (BRICK paper), Section III-B
+"""
+
+
+import torch
+import torch.nn as nn
+from models.koopman_utils import compute_pearson
+from config import N_ROIS, H, M, MLP_HIDDEN, NHEAD, NUM_LAYERS
+
+
+class Encoder(nn.Module):
+    def __init__(self, n_rois=N_ROIS, h=H, m=M, mlp_hidden=MLP_HIDDEN,
+                 nhead=NHEAD, num_layers=NUM_LAYERS, dropout=0.1):
+        super().__init__()
+        # FIX: guard the d_model % nhead == 0 requirement up front
+        assert h % nhead == 0, f"H={h} must be divisible by NHEAD={nhead}"
+        self.n_rois = n_rois
+        self.h = h
+        self.m = m
+
+        self.row_mlp = nn.Sequential(
+            nn.Linear(n_rois, mlp_hidden), 
+            nn.ReLU(), 
+            nn.Linear(mlp_hidden, h),
+        )
+
+        def make_head():
+            layer = nn.TransformerEncoderLayer(
+                d_model=h, nhead=nhead, batch_first=True, dim_feedforward=h * 4, dropout=dropout
+            )
+            return nn.TransformerEncoder(layer, num_layers=num_layers)
+
+        self.mu_head, self.logvar_head = make_head(), make_head()
+        self.mu_proj, self.logvar_proj = nn.Linear(h, h), nn.Linear(h, h)
+
+    def encode_spatial(self, x, fc=None):
+        # (T, N) or (B, T, N) -> (N, H) or (B, N, H). row_mlp shares weights
+        # across rows, so output row i tracks region i.
+        if fc is None:
+            fc = compute_pearson(x)
+        return self.row_mlp(fc)
+
+    def node_params(self, z0):
+        # z0: (..., N, H) -> per-node mu, logvar of shape (..., N, H).
+        # Operates token-wise; mu_head/logvar_head are equivariant over the N
+        # tokens, so this is the layer the paper's Phi-equivariance claim is about.
+        mu = self.mu_proj(self.mu_head(z0))
+        logvar = self.logvar_proj(self.logvar_head(z0))
+        LOGVAR_MIN, LOGVAR_MAX = -6.0, 2.0
+        logvar = LOGVAR_MIN + 0.5 * (LOGVAR_MAX - LOGVAR_MIN) * (torch.tanh(logvar) + 1.0)
+        return mu, logvar
+
+    def encode_distribution(self, x, fc=None):
+        z0 = self.encode_spatial(x, fc=fc)       # (..., N, H)
+        batched = (z0.dim() == 3)
+        if not batched:
+            z0 = z0.unsqueeze(0)                  # FIX: real (B,...) handling
+        mu, logvar = self.node_params(z0)         # (B, N, H)
+        # row-major flatten: region i -> block [i*H:(i+1)*H], i.e. N blocks of H.
+        # This is the layout the control-matrix->region interpretation relies on;
+        # keep it consistent with the decoder / W_x indexing.
+        mu = mu.reshape(mu.shape[0], self.m)
+        logvar = logvar.reshape(logvar.shape[0], self.m)
+        if not batched:
+            mu, logvar = mu.squeeze(0), logvar.squeeze(0)
+        return mu, logvar
+
+    def forward(self, x: torch.Tensor, fc: torch.Tensor = None):
+        """
+        Full encoder forward pass.
+
+        Returns g_0 sample, mu, and logvar from the approximate posterior.
+
+        In train mode: g_0 = mu + eps * exp(0.5 * logvar),  eps ~ N(0, I)
+        In eval mode:  g_0 = mu (deterministic)
+
+        Args:
+            x (torch.Tensor): BOLD timeseries, shape (T, N)
+            fc (torch.Tensor): Functional connectivity matrix, shape (N, N)
+
+        Returns:
+            g_0    (torch.Tensor): Sample, shape (M,)
+            mu     (torch.Tensor): Posterior mean, shape (M,)
+            logvar (torch.Tensor): Posterior log variance, shape (M,)
+        """
+        mu, logvar = self.encode_distribution(x, fc=fc)
+
+        if self.training:
+            eps = torch.randn_like(mu)
+            g_0 = mu + eps * torch.exp(0.5 * logvar)
+        else:
+            g_0 = mu
+
+        return g_0, mu, logvar

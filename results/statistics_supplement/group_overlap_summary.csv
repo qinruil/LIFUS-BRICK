@@ -1,0 +1,3 @@
+﻿analysis_set,n_VIM1st,n_VIM2nd,n_ZI1st,n_ZI2nd,subjects_with_both_targets,note
+full_19,9,10,10,9,19,crossover: VIM1st and ZI2nd are the same patients (VIM-first); ZI1st and VIM2nd are the same patients (ZI-first). Within-subject VIM-ZI pairs = all patients.
+filtered_16,6,10,10,6,16,"After excluding divergent folds (3 patients), pairwise independence across order groups is unchanged: the two target-level comparisons remain paired within subject."
