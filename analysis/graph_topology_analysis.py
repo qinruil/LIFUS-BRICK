@@ -11,7 +11,7 @@ Part A: Directed graph metrics on K and C
     vectors from the LOSO delta table for the control pathway). Computes
     in-degree, out-degree, betweenness centrality, local clustering
     coefficient and global/local efficiency on thresholded graphs, and
-    reports the hub regions identified by each metric.
+    and identifies hub regions by each metric.
 
 Part B: Threshold scanning and topological transitions
     Scans the coupling threshold from the 50th to the 95th percentile of

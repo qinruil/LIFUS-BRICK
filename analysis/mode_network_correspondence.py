@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Quantified correspondence between Koopman modes and resting-state
-network structure (replaces the visual "no correspondence" judgement, p58-60).
+network structure.
 
 Design
 ------
@@ -11,7 +11,7 @@ Two spaces built from the SAME 24 regions, each reduced to a subspace:
   A) resting-state co-activation space: Pearson FC over the BOLD time series
      (per session, group-averaged), eigen-decomposed (symmetric); the leading
      eigenvectors ARE the spatial co-activation patterns -- the same object the
-     report's "resting networks" language refers to, computed from this cohort.
+     resting-network reference, computed from this cohort.
 
   B) Koopman modal space: columns of |W_bar_x| (ROI loadings per mode) of the
      shared reference operator, mean-centred over ROIs so the non-negative
@@ -295,7 +295,7 @@ def main():
                    "caveat": "cohort-internal FC used as the resting-network reference because no "
                              "external whole-brain template is in the repo; this measures alignment "
                              "with THIS dataset's co-activation, not canonical Yeo networks. Atlas "
-                             "limitation stated on report p84 remains."},
+                             "atlas limitation remains."},
                   fh, indent=2, ensure_ascii=False)
     print(f"[done] {OUT_DIR} elapsed={time.time()-t0:.1f}s")
 

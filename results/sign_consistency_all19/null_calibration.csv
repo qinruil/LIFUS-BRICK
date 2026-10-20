@@ -1,7 +1,0 @@
-group_label,n_subjects,threshold,consistency_fraction_at_threshold,p_blue_given_H0_two_sided,expected_blue_cells_of_24
-VIM (1st tx),9,8,0.888889,0.0390625,0.9375
-VIM (2nd tx),10,8,0.8,0.109375,2.625
-ZI (1st tx),10,8,0.8,0.109375,2.625
-ZI (2nd tx),9,8,0.888889,0.0390625,0.9375
-ALL groups with n=9,9,8,0.888889,0.0390625,0.9375
-ALL groups with n=10,10,8,0.8,0.109375,2.625

@@ -6,7 +6,7 @@ Design disclosure for the crossover treatment design.
 The cohort is a two-treatment crossover: every patient receives both VIM and ZI
 low-intensity focused ultrasound, in one of two orders (VIM-first or ZI-first).
 Delta-C is computed per patient per target, which means the four "groups" used
-in the main report are not independent cohorts but order partitions of the same
+in the analysis are not independent cohorts but order partitions of the same
 19 patients.
 
 This script writes, for both the full 19-patient set and the 16-patient set used

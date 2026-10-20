@@ -6,7 +6,7 @@ Effect sizes and bootstrap confidence intervals for delta-C.
 For each target x ROI x order group (VIM1st, VIM2nd, ZI1st, ZI2nd), delta-C is
 a within-subject pre-to-post change; the standardized effect is therefore the
 one-sample Cohen's d = mean(delta)/sd(delta). Bias-corrected and accelerated
-(BCa) is not needed for the report-level summary; we give percentile bootstrap
+(BCa) is not needed for the group-level summary; we give percentile bootstrap
 95% CIs instead (2000 resamples, fixed seed).
 
 A group-level summary (median d, share of ROI with |d| >= 0.5) is also written,

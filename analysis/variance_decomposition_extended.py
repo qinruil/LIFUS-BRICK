@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Extended variance decomposition for the variance section (four parts).
+Extended variance decomposition (four parts).
 
 Part A (freq):  Frequency-band resolved %C / %K. The exact K/C split of the
                 BOLD reconstruction (x_K + x_C == x_hat, from the manual

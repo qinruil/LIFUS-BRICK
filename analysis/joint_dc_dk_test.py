@@ -5,9 +5,9 @@ Joint test of delta-C (local control gain) and delta-K (network propagation).
 
 Purpose
 -------
-The main report keeps delta-C and delta-K in separate chapters and never couples
-them on a common unit. This script performs the coupling tests that the existing
-saved tables support, WITHOUT retraining any model.
+Couples delta-C and delta-K on a common unit.
+This script performs the coupling tests that the existing saved tables
+support, WITHOUT retraining any model.
 
 Inputs (all pre-existing files, read only)
     results/figures/loso/loso_19_fold_beta_0.2_13to1to5_split/loso_delta_summary.csv
@@ -38,8 +38,7 @@ HARD CONSTRAINT ON THE INFERENCE UNIT (stated in every output table)
     that test has n = 24 regions with n = 1 operator, so the operator-level
     uncertainty (two independently trained nets, run-to-run optimisation noise)
     is entirely unrepresented. Every p-value below must be reported as
-    hypothesis-generating, consistent with the main report's own downgrade of
-    delta-K to descriptive status.
+    hypothesis-generating, consistent with delta-K's descriptive status.
 
 Usage
     python analysis/joint_dc_dk_test.py [--n-perm 5000] [--seed 20261006]
@@ -686,7 +685,7 @@ def main() -> None:
             "predictor; a nonzero mean rho therefore reflects region ordering agreement, "
             "not subject-specific coupling.",
             "All results are hypothesis-generating and must be reported with effect sizes "
-            "and CIs, consistent with the main report's N=19 power boundary.",
+            "and CIs, consistent with the N=19 power boundary.",
         ],
         "elapsed_sec": round(time.time() - t0, 2),
     }

@@ -4,18 +4,16 @@
 Cross-condition statistical analysis of the Koopman eigenvalue spectrum
 ================================================================================
 
-Motivation
-----------
-The report characterises the Koopman operator K only through the matrix itself
-and through descriptive percentile/z rankings of delta-K edges. The spectrum of
-K -- the eigenvalues Lambda, whose magnitude encodes decay rate and whose phase
-encodes oscillation frequency -- has never been compared statistically across
-conditions, even though the cohort design (2 targets x 2 conditions, plus a
-4-hour washout and two treatment orders) is exactly what makes such a comparison
-worth asking for.
+Overview
+--------
+Statistical comparison of the Koopman eigenvalue spectrum across conditions.
+The eigenvalues Lambda of K -- magnitude encodes decay rate, phase encodes
+oscillation frequency -- are compared statistically, motivated by the cohort
+design (2 targets x 2 conditions, plus a 4-hour washout and two treatment
+orders).
 
-Identifiability -- read this before interpreting any number below
------------------------------------------------------------------
+Identifiability constraints
+---------------------------
 In BRICK, K is a SINGLE SHARED operator per trained model. There is therefore
 NO per-subject, per-target or per-session version of Lambda, which means:
 
@@ -37,7 +35,7 @@ NO per-subject, per-target or per-session version of Lambda, which means:
           (19 subjects x 2 targets = 38 sessions per condition). This is the
           testable version of "the spectrum shifts across conditions".
 
-Consequently the script reports both: spectral-quantity distributions per model
+The script reports both: spectral-quantity distributions per model
 (A) and paired cross-condition tests of spectral energy participation (B).
 
 Statistical design
@@ -50,12 +48,11 @@ Statistical design
   retraining noise?" is the empirical distribution of pairwise distances within
   the pool of independently trained models (LOSO folds, seeds, betas). The
   observed pre-vs-post distance is scored against that pool by percentile and
-  by a standardised z, which is the same descriptive convention the report
-  already uses for delta-K.
+  by a standardised z (descriptive convention).
 * Within-condition paired tests (pre vs post per subject) use the paired t-test
   and Wilcoxon signed-rank test; the four-condition within-subject contrast
-  uses the Friedman test. Because treatment order is a design-level confound
-  that the report documents, every test is additionally stratified by
+  uses the Friedman test. Because treatment order is a design-level confound, every test is
+  additionally stratified by
   VIM_first / ZI_first.
 * Multiple comparisons across the 24 ROIs / test families are BH-FDR corrected.
   statsmodels is not available in this project's environment, so BH-FDR is
@@ -117,13 +114,13 @@ from preprocessing.load_preprocessed_data import load_all, TARGET_ROIS  # noqa: 
 TRAINED_MODELS_DIR = ROOT_DIR / "results" / "trained_models"
 OUT_DIR = ROOT_DIR / "results" / "spectrum_stats"
 
-# Primary LOSO run used by the report's main analysis (beta = 0.2).
+# Primary LOSO run (beta = 0.2).
 DEFAULT_LOSO_RUN = "loso_19_fold_beta_0.2_13to1to5_split"
 ALT_BETA_RUN = "loso_19_fold_beta_0.05_13to1to5_split"
 TASK_STATES_RUN = "task_states"
 SEED_SWEEP_RUN = "sweep_3_seeds"
 
-# The three model kinds, in the order the report refers to them.
+# The three model kinds.
 ROLE_MAIN = "loso_fold"
 ROLE_PRE = "task_state_pre"
 ROLE_POST = "task_state_post"
@@ -195,8 +192,8 @@ def collect_model_paths(folds_run: str, include_alt_beta: bool, include_seeds: b
     """
     Enumerate every checkpoint whose spectrum we can use, tagged with its role.
 
-    Only best_model_cls.pt is used, to keep one checkpoint convention per run
-    (the report's K/C analyses read the same file). Returns a list of dicts with
+    Only best_model_cls.pt is used, to keep one checkpoint convention per run.
+    Returns a list of dicts with
     keys: name, role, group, path.
     """
     entries = []
@@ -488,7 +485,7 @@ def participation_metrics(energy_share: np.ndarray, Lambda: np.ndarray, tr: floa
 
 def condition_label(target: str, phase_key: str, group: str) -> dict:
     """
-    Map a session to the four report conditions, plus the design-level order stratum.
+    Map a session to the four conditions, plus the design-level order stratum.
 
     phase_key is 'mpre' | 'mpost'. group is 'VIM_first' | 'ZI_first' exactly as
     stored in patient_treatment_mapping.xlsx via combine_and_align_rois.py.
@@ -608,7 +605,7 @@ def friedman_by_order(rows, metric: str):
     stratified by treatment order.
 
     Stratification is mandatory here: the second sonication acts on a brain that
-    already received the first, and the report documents a order-dependent
+    already received the first, and the design shows an order-dependent
     pattern. Pooling the two orders would average over that confound and make the
     statistic uninterpretable. n per stratum is small (11 / 8), so results are
     reported with consistency counts alongside p-values.
@@ -646,8 +643,7 @@ def order_interaction(rows, metric: str):
     Is the pre->post shift different between the two treatment orders?
 
     Two-sample test on delta = post - pre, per target. This is the direct test of
-    the order/priming narrative at the spectral-energy level, which the report
-    currently supports only by visual comparison of bar charts.
+    the order/priming effect at the spectral-energy level.
     """
     out = []
     for target in ("vim", "zi"):
@@ -1030,12 +1026,12 @@ def main(argv=None):
     print("\n" + "=" * 78)
     print("Interpretation guardrails")
     print("=" * 78)
-    print(" * pre_model vs post_model is one model each: report as hypothesis-generating,")
+    print(" * pre_model vs post_model is one model each: treat as hypothesis-generating,")
     print("   score against the fold-pair null, do not attach a significance claim.")
     print(" * Mode indices are not comparable between independently trained models;")
     print("   only distribution-level quantities are.")
     print(" * Any Hz or second value depends on the assumed TR (see run_manifest.json).")
-    print(" * N=19 caps inferential strength: report delta, CI and consistency counts,")
+    print(" * N=19 caps inferential strength: use delta, CI and consistency counts,")
     print("   not just p-values.")
     return 0
 

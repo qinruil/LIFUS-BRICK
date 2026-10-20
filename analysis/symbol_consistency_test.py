@@ -3,14 +3,12 @@
 """
 Statistical support for the sign-consistency criterion.
 
-Context
+Purpose
 -------
-The main report (p64-67) found no ROI surviving BH-FDR in any of the four
-treatment groups, then fell back to a sign-consistency criterion: a bar is
-coloured blue when >= 79% of the group's subjects share one delta-C direction.
-That fallback is reported WITHOUT a binomial/sign p-value, without stating the
-expected consistency under the null, and without a confidence bound on the
-consistency fraction. This script adds all three. It does NOT retrain or
+Adds inferential statistics to the sign-consistency criterion: a cell counts
+as consistent when >= 79% of the group's subjects share one delta-C direction.
+This script adds the exact binomial/sign p-value, the expected consistency
+under the null, and a confidence bound on the consistency fraction. It does NOT retrain or
 re-forward anything; it recomputes direction counts from the stored per-subject
 delta table and cross-checks them against the stored group statistics.
 

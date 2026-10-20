@@ -5,10 +5,10 @@ Sensitivity analysis for delta-C.
 
 Two layers of perturbation are quantified:
 
-A) Fold exclusion sensitivity. The main report excludes three divergent LOSO
-   folds (reconstruction loss far above the rest). Here we compare, per
-   target and ROI, the sign and magnitude of delta-C between the 19-fold and
-   16-fold summaries, and report the fraction of ROI whose sign flips.
+A) Fold exclusion sensitivity. Compares, per target and ROI, the sign and
+   magnitude of delta-C between the 19-fold and 16-fold summaries (the latter
+   excluding three divergent LOSO folds with reconstruction loss far above the
+   rest), and reports the fraction of ROI whose sign flips.
 
 B) Training/division seed sensitivity. The seed-sweep runs (3 training seeds
    x 3 division seeds, single-split models) are compared with the reference

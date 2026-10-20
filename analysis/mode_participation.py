@@ -4,13 +4,11 @@
 Koopman mode participation scores: spatial quantification, pre/post
 topography matching, and cross-fold stability.
 
-Motivation
-----------
-The report (p58-60) looked at mode spatial loadings and resting networks and
-judged "no correspondence" by eye, and it never quantified WHICH modal spatial
-patterns shift with treatment. This script turns that layer into numbers. It
-adds no retraining: every quantity is read from saved checkpoints (W_bar_x,
-nu_log, theta_log) or from the spectrum-analysis energy tables on disk.
+Overview
+--------
+Quantifies which modal spatial patterns shift across conditions. It adds no
+retraining: every quantity is read from saved checkpoints (W_bar_x, nu_log,
+theta_log) or from the spectrum-analysis energy tables on disk.
 
 Four outputs
 ------------
@@ -26,17 +24,16 @@ Four outputs
    loadnorm[m|roi]: "which regions does each condition actually run through".
 
 2) pre_post_matching.csv
-   The two task-state operators have no shared mode ordering (report p54-56),
-   so mode correspondence is ESTIMATED by optimal assignment on loading-space
+   The two task-state operators have no shared mode ordering, so mode
+   correspondence is ESTIMATED by optimal assignment on loading-space
    cosine similarity (Hungarian). For matched pairs we report the similarity,
    the pre/post persistence |Lambda| and frequency, and the shift. Summary
    lines compare matched similarity against the random-assignment baseline.
    This is the quantified version of "which modal spatial patterns changed".
 
 3) fold_stability.csv
-   The report claims persistence-rank mode topography is "highly consistent"
-   across LOSO folds, broken by sub-fuspd09/15/19. We reproduce that
-   definitionally: rank modes by |Lambda| descending within each fold, then
+   The stability of persistence-rank mode topography across LOSO folds is
+   quantified definitionally: rank modes by |Lambda| descending within each fold, then
    for each rank compute centroid cosine similarity across folds, and for each
    fold its mean similarity to the grand centroid.
 
@@ -52,8 +49,8 @@ Interpretation notes written into the files
   is discarded by design (mode phase is absorbed by the eigenvalue).
 * Pre/post matching similarity is NOT a statistical test; it characterises how
   much spatial correspondence exists between independently trained operators.
-* N=19: nothing in this script is a confirmatory inference (per the frozen
-  rule of this round, no new hypothesis-test families are opened here).
+* N=19: nothing in this script is a confirmatory inference (no new
+  hypothesis-test families are opened here).
 
 Usage
     python analysis/mode_participation.py
