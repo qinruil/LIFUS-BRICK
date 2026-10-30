@@ -17,12 +17,12 @@ sum_k sum_|i-j|<=w |S_ij| / sum_{i!=j} |S_ij|. A stratified permutation test
 preserving the four network groups scores whether the found bandedness exceeds
 the null distribution.
 
-Outputs (results/validation/S9/):
+Outputs (results/validation/loading_permutation/):
     loading_bandedness.csv
     fig_loading_reordered_{model}.png
 
 Usage:
-    python analysis/validation_S7_loading_permutation.py
+    python analysis/validation_loading_permutation.py
 
 Dependencies: numpy, pandas, scipy, matplotlib.
 """
@@ -37,7 +37,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "results" / "validation" / "S9"
+OUT = ROOT / "results" / "validation" / "loading_permutation"
 TS = ROOT / "results" / "figures" / "task_states"
 
 NET = {

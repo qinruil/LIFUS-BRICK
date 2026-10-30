@@ -12,13 +12,13 @@ A_post - A_pre over the off-diagonal connections is drawn in the identical
 ROI order so the two maps are directly comparable. Cross-map Spearman
 correlation over off-diagonal entries quantifies the visual similarity.
 
-Outputs (results/validation/S3/):
+Outputs (results/validation/k_vs_var_maps/):
     var_delta_A_eff_mean.csv
     k_vs_var_map_correlation.csv
     fig_k_vs_var_side_by_side.png
 
 Usage:
-    python analysis/validation_S3_k_vs_var_maps.py
+    python analysis/validation_k_vs_var_maps.py
 
 Dependencies: numpy, pandas, scipy, matplotlib, torch (model checkpoint-free;
 only preprocessed ROI time series are used).
@@ -39,7 +39,7 @@ sys.path.insert(0, str(ROOT))
 
 from preprocessing.load_preprocessed_data import load_all, TARGET_ROIS
 
-OUT = ROOT / "results" / "validation" / "S3"
+OUT = ROOT / "results" / "validation" / "k_vs_var_maps"
 KDIFF = (ROOT / "results" / "figures" / "task_states" / "K_comparison" /
          "K_region_coupling_diff.csv")
 EXCLUDED = {"sub-fuspd09", "sub-fuspd15", "sub-fuspd19"}

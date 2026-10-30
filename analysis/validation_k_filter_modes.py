@@ -22,7 +22,7 @@ A near-unit real pair with vanishing phase is reported as the DC-like
 component. The energy-weighted top-10 modes per condition are taken from
 condition_participation_by_mode.csv (mean_energy_share).
 
-Outputs (results/validation/S1/):
+Outputs (results/validation/k_filter_modes/):
     k_mode_time_analysis.csv        per-model per-mode lambda/arg/f/tau/type
     dominant_modes_summary.csv      top-10 by energy share per model/condition
     stability_dc_check.csv          max|lambda|, counts of near-unit real modes
@@ -30,7 +30,7 @@ Outputs (results/validation/S1/):
     fig_mode_classification.png     |lambda| vs phase scatter per model
 
 Usage:
-    python analysis/validation_S1_k_filter_modes.py
+    python analysis/validation_k_filter_modes.py
 
 Dependencies: numpy, torch, pandas, matplotlib (model loading via repo modules).
 """
@@ -56,7 +56,7 @@ DC_PHASE_MAX = 0.02           # near-zero phase for DC-like detection
 
 TS_DIR = ROOT / "results" / "figures" / "task_states"
 REF_CKPT = ROOT / "results" / "final_model" / "best_model_cls.pt"
-OUT = ROOT / "results" / "validation" / "S1"
+OUT = ROOT / "results" / "validation" / "k_filter_modes"
 
 
 def load_ref_lambda():

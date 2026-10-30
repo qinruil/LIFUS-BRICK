@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-S4 validation carried over: STN delta-C contrast and delta-C vs tremor change.
+Validation carried over: STN delta-C contrast and delta-C vs tremor change.
 
 Computes, for the 24-ROI BRICK model (19-patient LIFUS cohort):
 
@@ -293,7 +293,7 @@ def save_figures(df: pd.DataFrame, out: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path,
-                    default=ROOT / "results/validation/S4")
+                    default=ROOT / "results/validation/tremor_stn")
     args = ap.parse_args()
     out: Path = args.out
     out.mkdir(parents=True, exist_ok=True)

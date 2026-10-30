@@ -22,13 +22,13 @@ Per family: number of tests, the strongest |rho| and its p, BH-FDR q within
 the family, and the count of q < 0.05 survivors. The comparison table answers
 whether standard metrics reach the predictive strength of delta-C.
 
-Outputs (results/validation/S6/):
+Outputs (results/validation/standard_metric_superiority/):
     metric_tremor_spearman.csv
     metric_family_comparison.csv
     fig_metric_family_comparison.png
 
 Usage:
-    python analysis/validation_S5_standard_metric_superiority.py
+    python analysis/validation_standard_metric_superiority.py
 
 Dependencies: numpy, scipy, pandas, matplotlib.
 """
@@ -48,7 +48,7 @@ from scipy.signal import welch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 ARC = ROOT.parent / "fhqwd-osfstorage-archive"
-OUT = ROOT / "results" / "validation" / "S6"
+OUT = ROOT / "results" / "validation" / "standard_metric_superiority"
 TR = 2.0
 SLOW = (0.01, 0.10)
 ROI_FC22 = ["Left-Caudate", "Left-GPe", "Left-GPi", "Left-Putamen", "Left-STN",

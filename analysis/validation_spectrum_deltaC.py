@@ -17,13 +17,13 @@ the 24 ROIs are estimated before and after sonication (TR = 2.0 s, Nyquist
    across subjects (Spearman, per target x band), to check that the
    showcase case is representative rather than arbitrary.
 
-Outputs (results/validation/S2/):
+Outputs (results/validation/spectrum_deltaC/):
     session_visibility_rank.csv
     fig_showcase_{subject}_{target}.png
     bandpower_deltaC_spearman.csv
 
 Usage:
-    python analysis/validation_S2_spectrum_deltaC.py
+    python analysis/validation_spectrum_deltaC.py
 
 Dependencies: numpy, scipy, pandas, matplotlib.
 """
@@ -42,7 +42,7 @@ from scipy.signal import welch
 
 ROOT = Path(__file__).resolve().parents[1]
 ARC = ROOT.parent / "fhqwd-osfstorage-archive"
-OUT = ROOT / "results" / "validation" / "S2"
+OUT = ROOT / "results" / "validation" / "spectrum_deltaC"
 TR = 2.0
 FS = 1.0 / TR
 ROIS24 = ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",

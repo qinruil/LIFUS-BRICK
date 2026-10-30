@@ -19,14 +19,14 @@ interaction; and the slowest K-decay time constants (tau from the reference
 operator) are reported against the 4 h washout window to state what decay
 time scale the propagated-history term would imply.
 
-Outputs (results/validation/S7/):
+Outputs (results/validation/washout_dynamics/):
     washout_contrasts.csv
     washout_group_summary.csv
     k_tau_vs_washout_window.csv
     fig_washout_dynamics.png
 
 Usage:
-    python analysis/validation_S6_washout_dynamics.py
+    python analysis/validation_washout_dynamics.py
 
 Dependencies: numpy, pandas, scipy, matplotlib.
 """
@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import wilcoxon
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "results" / "validation" / "S7"
+OUT = ROOT / "results" / "validation" / "washout_dynamics"
 LOSO = (ROOT / "results" / "figures" / "loso"
         / "loso_19_fold_beta_0.2_13to1to5_split")
 WASH_S = 4 * 3600.0
@@ -117,7 +117,7 @@ def main():
                      "eigenvalue_records.csv")
     ref = ev[ev["model"] == ev["model"].iloc[0]] if len(ev) else ev
     try:
-        tau_tab = pd.read_csv(ROOT / "results" / "validation" / "S1" /
+        tau_tab = pd.read_csv(ROOT / "results" / "validation" / "k_filter_modes" /
                               "stability_dc_check.csv")
     except FileNotFoundError:
         tau_tab = None

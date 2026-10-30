@@ -23,12 +23,12 @@ performed on a pre-specified convergence criterion (reconstruction loss), the
 data themselves are unremarkable; the subtype/speculation paragraph is
 removed.
 
-Outputs (results/validation/S5/):
+Outputs (results/validation/exclusion_diagnostics/):
     fold_diagnostics.csv
     fig_excluded_vs_retained.png
 
 Usage:
-    python analysis/validation_S4_exclusion_diagnostics.py
+    python analysis/validation_exclusion_diagnostics.py
 
 Dependencies: numpy, pandas, matplotlib.
 """
@@ -46,7 +46,7 @@ from scipy.signal import welch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-OUT = ROOT / "results" / "validation" / "S5"
+OUT = ROOT / "results" / "validation" / "exclusion_diagnostics"
 
 LOSO_DIR = (ROOT / "results" / "figures" / "loso"
             / "loso_19_fold_beta_0.2_13to1to5_split")
