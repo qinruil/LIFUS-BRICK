@@ -153,7 +153,10 @@ def main():
         plot_panels(df[df["model"] == model], model,
                     OUT / f"fig_mode_panels_{model.replace('_model','')}.png")
 
-    fig, axes = plt.subplots(3, 1, figsize=(9, 15))
+    fig = plt.figure(figsize=(9, 15.8))
+    gs = fig.add_gridspec(4, 1, height_ratios=[1, 1, 1, 0.05], hspace=0.28)
+    axes = [fig.add_subplot(gs[i]) for i in range(3)]
+    cax = fig.add_subplot(gs[3])
     for ax, model in zip(axes, ["reference", "pre_model", "post_model"]):
         g = df[df["model"] == model]
         c = g["freq_hz"] * 2 * np.pi * TR
@@ -162,11 +165,11 @@ def main():
         ax.axhline(1.0, color="k", lw=0.6)
         ax.set_xlabel("phase (rad)"); ax.set_ylabel("|lambda|")
         ax.set_title(f"{model}")
-    fig.colorbar(sc, ax=axes.tolist(), label="frequency (Hz) within Nyquist 0.125",
-                 fraction=0.03, pad=0.03)
+    fig.colorbar(sc, cax=cax, orientation="horizontal",
+                 label="frequency (Hz) within Nyquist 0.125")
     fig.suptitle("K spectra: every mode decays (|lambda|<1); colour = frequency",
                  fontsize=13)
-    fig.tight_layout(rect=[0, 0, 1, 0.97])
+    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
     fig.savefig(OUT / "fig_mode_classification.png")
     plt.close(fig)
 

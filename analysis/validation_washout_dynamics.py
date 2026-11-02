@@ -128,21 +128,23 @@ def main():
     slow["residual_at_washout"] = slow["eigenvalue_mag"] ** (WASH_S / TR)
     slow.to_csv(OUT / "k_tau_vs_washout_window.csv", index=False)
 
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-    for ax, order in zip(axes, ["VIM_first", "ZI_first"]):
+    for order in ["VIM_first", "ZI_first"]:
         g = sdf[sdf["order"] == order].sort_values(
             "median_washout_delta", key=lambda s: s.abs(), ascending=False)
         colors = ["C3" if q < 0.05 else "#999999" for q in g["q_washout"]]
+        n_surv = int((g["q_washout"] < 0.05).sum())
+        fig, ax = plt.subplots(figsize=(7.5, 8))
         ax.barh(range(len(g)), g["median_washout_delta"], color=colors)
         ax.set_yticks(range(len(g)))
-        ax.set_yticklabels(g["roi"], fontsize=6)
+        ax.set_yticklabels(g["roi"], fontsize=9)
         ax.axvline(0, color="k", lw=0.6)
         ax.set_title(f"{order}: median C change across 4 h washout\n"
-                     "(red = survives BH-FDR within order)")
+                     f"red = survives within-order BH-FDR "
+                     f"({n_surv}/{len(g)} here)", fontsize=12)
         ax.set_xlabel("ΔC during washout")
-    fig.tight_layout()
-    fig.savefig(OUT / "fig_washout_dynamics.png", dpi=120)
-    plt.close(fig)
+        fig.tight_layout()
+        fig.savefig(OUT / f"fig_washout_{order.lower()}.png", dpi=120)
+        plt.close(fig)
 
     piv = sdf.pivot_table(index="roi", columns="order",
                           values="median_washout_delta")
