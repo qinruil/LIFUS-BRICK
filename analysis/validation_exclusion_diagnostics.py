@@ -121,7 +121,7 @@ def main():
     num = [c for c in df.columns
            if c not in ("subject_id", "excluded", "fold_spectrum_models")]
     excl = df[df["excluded"]]["subject_id"].tolist()
-    fig, axes = plt.subplots(2, 3, figsize=(13, 7.5))
+    fig, axes = plt.subplots(3, 2, figsize=(12, 15))
     cols = ["val_loss_recon", "val_loss_cls", "d_slow_power_frac",
             "d_lag1_ac", "d_mean_abs_fc", "max_abs_lambda_fold"]
     for ax, c in zip(axes.ravel(), cols):
@@ -135,8 +135,8 @@ def main():
         ax.scatter(np.full(len(exc), 1), pd.to_numeric(exc[c], errors="coerce"),
                    s=40, color="C3", label="excluded (3)")
         ax.set_xticks([0, 1]); ax.set_xticklabels(["retained", "excluded"])
-        ax.set_title(c, fontsize=10)
-        ax.legend(fontsize=8)
+        ax.set_title(c, fontsize=13)
+        ax.legend(fontsize=10)
     fig.suptitle("Excluded folds vs retained: model-side losses are extreme, "
                  "data-side statistics are unremarkable")
     fig.tight_layout(rect=[0, 0, 1, 0.96])

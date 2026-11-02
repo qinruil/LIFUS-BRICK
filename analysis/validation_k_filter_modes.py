@@ -86,7 +86,7 @@ def mode_table(lam, model):
 
 def plot_panels(df, model, out_path, top_n=8):
     d = df.sort_values("abs_lambda", ascending=False).head(top_n)
-    fig, axes = plt.subplots(2, 4, figsize=(13, 6))
+    fig, axes = plt.subplots(4, 2, figsize=(12, 16))
     t_steps = np.arange(0, 31)
     t_s = t_steps * TR
     for ax, (_, r) in zip(axes.ravel(), d.iterrows()):
@@ -98,11 +98,11 @@ def plot_panels(df, model, out_path, top_n=8):
         ax.plot(t_s, kern, lw=1.3, color=("C3" if r["oscillatory"] else "C0"))
         tag = "osc" if r["oscillatory"] else "decay"
         ax.set_title(f"m{int(r['mode'])}  |L|={r['abs_lambda']:.3f}\n"
-                     f"f={r['freq_hz']:.3f}Hz tau={r['tau_s']:.1f}s [{tag}]", fontsize=8)
+                     f"f={r['freq_hz']:.3f}Hz tau={r['tau_s']:.1f}s [{tag}]", fontsize=11)
         ax.axhline(0, color="grey", lw=0.5)
         ax.set_xlim(0, t_s[-1])
     fig.suptitle(f"{model}: time kernels of top-8 modes (|lambda| ranking), TR=2.0 s",
-                 fontsize=11)
+                 fontsize=14)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.savefig(out_path)
     plt.close(fig)
@@ -153,7 +153,7 @@ def main():
         plot_panels(df[df["model"] == model], model,
                     OUT / f"fig_mode_panels_{model.replace('_model','')}.png")
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.4))
+    fig, axes = plt.subplots(3, 1, figsize=(9, 15))
     for ax, model in zip(axes, ["reference", "pre_model", "post_model"]):
         g = df[df["model"] == model]
         c = g["freq_hz"] * 2 * np.pi * TR
@@ -162,9 +162,11 @@ def main():
         ax.axhline(1.0, color="k", lw=0.6)
         ax.set_xlabel("phase (rad)"); ax.set_ylabel("|lambda|")
         ax.set_title(f"{model}")
-    fig.colorbar(sc, ax=axes, label="frequency (Hz) within Nyquist 0.125")
-    fig.suptitle("K spectra: every mode decays (|lambda|<1); colour = frequency")
-    fig.tight_layout(rect=[0, 0, 0.93, 0.94])
+    fig.colorbar(sc, ax=axes.tolist(), label="frequency (Hz) within Nyquist 0.125",
+                 fraction=0.03, pad=0.03)
+    fig.suptitle("K spectra: every mode decays (|lambda|<1); colour = frequency",
+                 fontsize=13)
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
     fig.savefig(OUT / "fig_mode_classification.png")
     plt.close(fig)
 
