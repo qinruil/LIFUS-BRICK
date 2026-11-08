@@ -33,8 +33,8 @@ Null model: ROI labels permuted within the network-size strata (so a mode can
 be "concentrated on Cerebellum" only against the 4/24 null rate, not against 1/24).
 
 No hypothesis family is opened here beyond the permutation p-values of the
-alignment statistics; per the frozen round rule these are descriptive-
-confirmatory (N=19) and are labelled as such in every row.
+alignment statistics; these analyses are descriptive-confirmatory (N=19)
+and are labelled as such in every row.
 
 Usage
     python analysis/mode_network_correspondence.py
@@ -72,8 +72,8 @@ NETWORKS = {  # verbatim grouping from compare_pre_post.py, all members exist in
 }
 NET_OF_ROI = {}
 for _n, _rois in {
-    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
-                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH"],
+    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
+                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN"],
     "Cerebellum":   ["lh_cerebellum_dentate", "lh_cerebellum_motor",
                      "rh_cerebellum_dentate", "rh_cerebellum_motor"],
     "Cortex":       ["lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",

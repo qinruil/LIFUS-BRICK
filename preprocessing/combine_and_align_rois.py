@@ -55,10 +55,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --- TARGET 24 ROIs IN ORDER ---
 TARGET_ROIS = [
-    'lh_Ca', 'lh_GPe', 'lh_GPi', 'lh_Pu', 'lh_STH', 'lh_cerebellum_dentate',
+    'lh_Ca', 'lh_GPe', 'lh_GPi', 'lh_Pu', 'lh_STN', 'lh_cerebellum_dentate',
     'lh_cerebellum_motor', 'lh_paracentral_smooth3mm', 'lh_postcentral_smooth3mm',
     'lh_precentral_smooth3mm', 'lh_superiorfrontal_smooth3mm', 'lh_vim', 'lh_zi',
-    'rh_Ca', 'rh_GPe', 'rh_GPi', 'rh_Pu', 'rh_STH', 'rh_cerebellum_dentate',
+    'rh_Ca', 'rh_GPe', 'rh_GPi', 'rh_Pu', 'rh_STN', 'rh_cerebellum_dentate',
     'rh_cerebellum_motor', 'rh_paracentral_smooth3mm', 'rh_postcentral_smooth3mm',
     'rh_precentral_smooth3mm', 'rh_superiorfrontal_smooth3mm'
 ]
@@ -117,9 +117,22 @@ def preprocess_subject_data():
         mpost_24 = np.hstack((mpost_23, target_post))
         all_current_labels = raw_labels + [extra_label]
         
-        # 5. Reorder columns to match your exact TARGET_ROIS order
+        # 5. Reorder columns to match your exact TARGET_ROIS order.
+        #    Source .mat files still carry the pre-rename subthalamic label
+        #    ('lh_STH' / 'rh_STH'); accept that spelling as an alias of the
+        #    current STN name so both generations of files align.
+        LEGACY_FN = {"lh_STN": "lh_STH", "rh_STN": "rh_STH"}
+
+        def _col_index(label):
+            if label in all_current_labels:
+                return all_current_labels.index(label)
+            old = LEGACY_FN.get(label)
+            if old is not None and old in all_current_labels:
+                return all_current_labels.index(old)
+            raise ValueError(f"{label!r} not among file labels")
+
         try:
-            reorder_indices = [all_current_labels.index(roi) for roi in TARGET_ROIS]
+            reorder_indices = [_col_index(roi) for roi in TARGET_ROIS]
         except ValueError as e:
             print(f"❌ Label matching error in {filename}: {e}")
             print(f"Available labels inside file were: {all_current_labels}")

@@ -93,8 +93,8 @@ TR = 2.0  # confirmed by the user on 2026-10-06
 # verbatim network grouping from analysis/compare_pre_post.py (lines 164-183),
 # restricted to regions actually present in TARGET_ROIS
 NETWORKS = {
-    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
-                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH"],
+    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
+                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN"],
     "Cerebellum":   ["lh_cerebellum_dentate", "lh_cerebellum_motor",
                      "rh_cerebellum_dentate", "rh_cerebellum_motor"],
     "Cortex":       ["lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",

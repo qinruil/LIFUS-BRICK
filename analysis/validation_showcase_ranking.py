@@ -9,7 +9,7 @@ Two independent rankings of candidate case-study sessions:
      visibility score (mean absolute log slow-band power ratio) used as the
      tie-break and figure-quality proxy;
   B. absolute delta-C at a named key region (lh_GPi, VIM-treated sessions
-     and rh_STH, ZI-treated sessions), so the picked subject has a large
+     and rh_STN, ZI-treated sessions), so the picked subject has a large
      control-gain change at the region discussed in the text.
 
 Both are written as CSV plus a printed top-3 table. A companion figure
@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parents[1]
 V = ROOT / "results" / "validation"
 OUT = V / "individual_lda_ablation"
 
-KEY_REGION = {"vim": "lh_GPi", "zi": "rh_STH"}
+KEY_REGION = {"vim": "lh_GPi", "zi": "rh_STN"}
 DIVERGENT = {"sub-fuspd09", "sub-fuspd15", "sub-fuspd19"}
 
 
@@ -112,7 +112,7 @@ def main():
     rb.to_csv(OUT / "showcase_rank_B_key_region.csv", index=False)
     print("=== A. by largest single-ROI |delta-C| per session ===")
     print(ra.head(3).to_string(index=False))
-    print("=== B. by |delta-C| at key region (lh_GPi VIM / rh_STH ZI) ===")
+    print("=== B. by |delta-C| at key region (lh_GPi VIM / rh_STN ZI) ===")
     print(rb.head(3).to_string(index=False))
     ablation_figure()
     print("figure:", OUT / "fig_ablation_tremor_comparison.png")

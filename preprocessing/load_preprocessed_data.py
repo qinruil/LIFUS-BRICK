@@ -6,10 +6,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 PREPROCESSED_DIR = ROOT_DIR / "data" / "preprocessed_data"
 
 TARGET_ROIS = [
-    'lh_Ca', 'lh_GPe', 'lh_GPi', 'lh_Pu', 'lh_STH', 'lh_cerebellum_dentate',
+    'lh_Ca', 'lh_GPe', 'lh_GPi', 'lh_Pu', 'lh_STN', 'lh_cerebellum_dentate',
     'lh_cerebellum_motor', 'lh_paracentral_smooth3mm', 'lh_postcentral_smooth3mm',
     'lh_precentral_smooth3mm', 'lh_superiorfrontal_smooth3mm', 'lh_vim', 'lh_zi',
-    'rh_Ca', 'rh_GPe', 'rh_GPi', 'rh_Pu', 'rh_STH', 'rh_cerebellum_dentate',
+    'rh_Ca', 'rh_GPe', 'rh_GPi', 'rh_Pu', 'rh_STN', 'rh_cerebellum_dentate',
     'rh_cerebellum_motor', 'rh_paracentral_smooth3mm', 'rh_postcentral_smooth3mm',
     'rh_precentral_smooth3mm', 'rh_superiorfrontal_smooth3mm'
 ]

@@ -163,8 +163,8 @@ def plot_mode_maps(
     """
     NETWORKS = {
         "Basal Ganglia": [
-            "lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
-            "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH",
+            "lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
+            "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN",
         ],
         "Cerebellum": [
             "lh_cerebellum_dentate", "lh_cerebellum_motor",

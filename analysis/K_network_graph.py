@@ -44,8 +44,8 @@ plt.rcParams.update({
 NET_COLORS = {"BasalGanglia": "#4472C4", "Cerebellum": "#70AD47",
               "Cortex": "#ED7D31", "TUS": "#7030A0"}
 NET_GROUPS = {
-    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
-                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH"],
+    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
+                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN"],
     "Cerebellum": ["lh_cerebellum_dentate", "lh_cerebellum_motor",
                    "rh_cerebellum_dentate", "rh_cerebellum_motor"],
     "Cortex": ["lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",

@@ -77,8 +77,8 @@ DC_CSV = LOSO_DIR / "loso_delta_summary.csv"
 
 EPS = 1e-12
 NETWORK_GROUPS = {
-    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
-                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH"],
+    "BasalGanglia": ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
+                     "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN"],
     "Cerebellum":   ["lh_cerebellum_dentate", "lh_cerebellum_motor",
                      "rh_cerebellum_dentate", "rh_cerebellum_motor"],
     "Cortex":       ["lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",

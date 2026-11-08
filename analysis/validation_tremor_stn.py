@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Validation carried over: STN delta-C contrast and delta-C vs tremor change.
+STN delta-C contrast and delta-C versus tremor change validation.
 
 Computes, for the 24-ROI BRICK model (19-patient LIFUS cohort):
 
 Part 1. STN delta-C after ZI versus after VIM.
         Pairs the within-subject control-gain changes (roi_c_post - roi_c_pre)
-        of lh_STH / rh_STH across the two sonication targets, with a two-sided
+        of lh_STN / rh_STN across the two sonication targets, with a two-sided
         Wilcoxon signed-rank test and a paired Cohen's dz. Runs on both the
         19-subject fold set and the 16-subject set (three divergent folds
         excluded).
@@ -18,7 +18,7 @@ Part 2. Correlation between delta-C and tremor change.
         post-sonication tremor power. Spearman correlation between the
         per-subject delta-C of a given ROI and the tremor change of the same
         target (VIM or ZI), for postural and rest tasks separately. Reported
-        for the pre-specified ROIs (lh_GPi, lh_STH, rh_STH) and for all 24
+        for the pre-specified ROIs (lh_GPi, lh_STN, rh_STN) and for all 24
         ROIs, with BH-FDR marking inside each target x task family.
 
 Inputs (read only):
@@ -55,14 +55,14 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT.parent / "fhqwd-osfstorage-archive"
 TARGET_ROIS = [
-    "lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH", "lh_cerebellum_dentate",
+    "lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN", "lh_cerebellum_dentate",
     "lh_cerebellum_motor", "lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",
     "lh_precentral_smooth3mm", "lh_superiorfrontal_smooth3mm", "lh_vim", "lh_zi",
-    "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STH", "rh_cerebellum_dentate",
+    "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu", "rh_STN", "rh_cerebellum_dentate",
     "rh_cerebellum_motor", "rh_paracentral_smooth3mm", "rh_postcentral_smooth3mm",
     "rh_precentral_smooth3mm", "rh_superiorfrontal_smooth3mm",
 ]
-SPECIFIED_ROIS = ["lh_GPi", "lh_STH", "rh_STH"]
+SPECIFIED_ROIS = ["lh_GPi", "lh_STN", "rh_STN"]
 DIVERGENT_FOLDS = {"sub-fuspd09", "sub-fuspd15", "sub-fuspd19"}
 
 
@@ -142,7 +142,7 @@ def paired_dz(a: np.ndarray, b: np.ndarray) -> float:
 def run_stn_comparison(d19: pd.DataFrame, d16: pd.DataFrame) -> pd.DataFrame:
     out = []
     for label, df in (("19-subject", d19), ("16-subject", d16)):
-        for roi in ("lh_STH", "rh_STH"):
+        for roi in ("lh_STN", "rh_STN"):
             rows = []
             for tgt in ("vim", "zi"):
                 sub = df[(df["roi"] == roi) & (df["target"] == tgt)]

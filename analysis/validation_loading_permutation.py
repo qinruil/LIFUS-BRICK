@@ -42,8 +42,8 @@ TS = ROOT / "results" / "figures" / "task_states"
 
 NET = {
     "lh_Ca": "BG", "lh_GPe": "BG", "lh_GPi": "BG", "lh_Pu": "BG",
-    "lh_STH": "BG", "rh_Ca": "BG", "rh_GPe": "BG", "rh_GPi": "BG",
-    "rh_Pu": "BG", "rh_STH": "BG",
+    "lh_STN": "BG", "rh_Ca": "BG", "rh_GPe": "BG", "rh_GPi": "BG",
+    "rh_Pu": "BG", "rh_STN": "BG",
     "lh_cerebellum_dentate": "CB", "lh_cerebellum_motor": "CB",
     "rh_cerebellum_dentate": "CB", "rh_cerebellum_motor": "CB",
     "lh_paracentral_smooth3mm": "CX", "lh_postcentral_smooth3mm": "CX",

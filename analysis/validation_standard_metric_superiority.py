@@ -58,6 +58,9 @@ ROI_FC22 = ["Left-Caudate", "Left-GPe", "Left-GPi", "Left-Putamen", "Left-STN",
             "Right-STN", "Right-CBM-Dentate", "Right-CBM-Motor",
             "Right-Paracentral", "Right-Postcentral", "Right-Precentral",
             "Right-SupFront"]
+# Archive timeseries .mat files still carry the pre-rename subthalamic
+# spelling; map it onto the current STN label when matching columns.
+LEGACY_FN = {"lh_STH": "lh_STN", "rh_STH": "rh_STN"}
 
 
 def bh_fdr(pvals):
@@ -107,12 +110,12 @@ def delta_c_matrix(dsum, subs, target):
     return out, ROI_ORDER
 
 
-ROI_ORDER = ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STH",
+ROI_ORDER = ["lh_Ca", "lh_GPe", "lh_GPi", "lh_Pu", "lh_STN",
              "lh_cerebellum_dentate", "lh_cerebellum_motor",
              "lh_paracentral_smooth3mm", "lh_postcentral_smooth3mm",
              "lh_precentral_smooth3mm", "lh_superiorfrontal_smooth3mm",
              "lh_vim", "lh_zi", "rh_Ca", "rh_GPe", "rh_GPi", "rh_Pu",
-             "rh_STH", "rh_cerebellum_dentate", "rh_cerebellum_motor",
+             "rh_STN", "rh_cerebellum_dentate", "rh_cerebellum_motor",
              "rh_paracentral_smooth3mm", "rh_postcentral_smooth3mm",
              "rh_precentral_smooth3mm", "rh_superiorfrontal_smooth3mm"]
 
@@ -157,7 +160,8 @@ def build_metric_matrices(subs, target):
         ts_p = ARC / "rsfMRI" / "timeseries" / f"{s}_ses-2_roi-{target}_meants.mat"
         if ts_p.exists():
             mm = sio.loadmat(ts_p)
-            names = [str(x[0]) for x in np.ravel(mm["fn"])]
+            names = [LEGACY_FN.get(str(x[0]), str(x[0]))
+                     for x in np.ravel(mm["fn"])]
             for j in range(min(mm["mpre"].shape[1], 24)):
                 nm = names[j] if j < len(names) else None
                 if nm not in ROI_ORDER:

@@ -313,8 +313,10 @@ def plot_block_coupling_diff(B_diff: np.ndarray, roi_names, out_path: Path):
     ax.set_ylabel("target ROI (t+1)")
     ax.set_title("\u0394 region-to-region latent coupling  (post \u2212 pre)\n"
                  "red = stronger post, blue = stronger pre  |  DESCRIPTIVE "
-                 "(two separately-trained models; one run each)",
-                 fontsize=10)
+                 "(two separately-trained models; one run each)\n"
+                 "blocks are ROI-anchored, but eigen-slots are not aligned "
+                 "across runs: differences are coarse magnitudes only",
+                 fontsize=9)
     plt.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(out_path, dpi=150, bbox_inches="tight")
@@ -375,6 +377,12 @@ def run_K_comparison(top_k: int):
     print(f"  Frobenius norm of diff:  {np.linalg.norm(B_diff):.4f}")
     print("\n  (DESCRIPTIVE -- one model per condition; a difference here "
           "cannot be separated from run-to-run optimization variability.)")
+    print("  (LATENT-COORDINATE CAVEAT -- pre_model and post_model were "
+          "trained separately and carry different latent bases; mode-index "
+          "comparisons across the two runs (e.g. persistence-rank "
+          "heatmaps) are not comparable without subspace alignment. Only "
+          "the ROI-anchored block norms and basis-independent spectral "
+          "scalars may be compared.)")
 
 
 # ================================================================================

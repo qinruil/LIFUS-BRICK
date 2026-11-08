@@ -137,11 +137,15 @@ def main():
         ax.barh(range(len(g)), g["median_washout_delta"], color=colors)
         ax.set_yticks(range(len(g)))
         ax.set_yticklabels(g["roi"], fontsize=9)
+        ax.set_ylabel("ROI (control gain projected to brain space)")
         ax.axvline(0, color="k", lw=0.6)
         ax.set_title(f"{order}: median C change across 4 h washout\n"
                      f"red = survives within-order BH-FDR "
                      f"({n_surv}/{len(g)} here)", fontsize=12)
-        ax.set_xlabel("ΔC during washout")
+        ax.set_xlabel("change in ROI control gain C, arbitrary C units\n"
+                      "C(session 2, pre-sonication)\n"
+                      "  minus C(session 1, post-sonication)\n"
+                      "i.e. drift over the 4 h no-stimulation interval")
         fig.tight_layout()
         fig.savefig(OUT / f"fig_washout_{order.lower()}.png", dpi=120)
         plt.close(fig)

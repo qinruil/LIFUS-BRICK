@@ -161,12 +161,12 @@ def main():
         g = df[df["model"] == model]
         c = g["freq_hz"] * 2 * np.pi * TR
         sc = ax.scatter(g["phase_rad"], g["abs_lambda"], s=12, c=c,
-                        cmap="viridis", vmin=0, vmax=0.125)
+                        cmap="viridis", vmin=0, vmax=0.25)
         ax.axhline(1.0, color="k", lw=0.6)
         ax.set_xlabel("phase (rad)"); ax.set_ylabel("|lambda|")
         ax.set_title(f"{model}")
     fig.colorbar(sc, cax=cax, orientation="horizontal",
-                 label="frequency (Hz) within Nyquist 0.125")
+                 label="frequency (Hz), full 0 to Nyquist 0.25 range (TR = 2.0 s)")
     fig.suptitle("K spectra: every mode decays (|lambda|<1); colour = frequency",
                  fontsize=13)
     fig.tight_layout(rect=[0, 0.03, 1, 0.97])
